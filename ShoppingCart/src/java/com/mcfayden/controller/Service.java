@@ -98,13 +98,21 @@ public class Service  implements Serializable{
     @DELETE
     @Path("/shoppingcartItemsIdDelete")
     @Produces("application/json")
-    public Response shoppingcartItemsIdDelete (@PathParam("commerceId") String commerceId){
+    public Response shoppingcartItemsIdDelete (@QueryParam("commerceId") String commerceId){
         if(commerceId == null){
             System.out.println("Commerce id is required");
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
-        return Response.status(200).entity(getShoppingCart().getItems().remove(commerceId)).build();
+        if(!getShoppingCart().getItems().isEmpty()){
+            for(CommerceItem commerceItem : getShoppingCart().getItems()){
+                if(commerceItem.getCommerceId().equals(commerceId)){
+                    getShoppingCart().getItems().remove(commerceItem);
+                }
+            }
+        }
+        return Response.status(200).entity(getShoppingCart()).build();
     }
+    
     
     // Getter & Setters
     public ShoppingCart getShoppingCart() {
