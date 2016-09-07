@@ -55,14 +55,7 @@ public class Service  implements Serializable{
         HttpSession session = request.getSession(true);
         if(session != null && session.getAttribute("shoppingCart") != null){
             setShoppingCart((ShoppingCart)session.getAttribute("shoppingCart"));
-        }
-        for (CommerceItem commerceItem : getShoppingCart().getItems()) {
-            if(getShoppingCart().getAmount() == null){
-                getShoppingCart().setAmount(commerceItem.getAmount());
-            }else{
-                getShoppingCart().setAmount(getShoppingCart().getAmount().add(commerceItem.getAmount()));
-            }
-        }
+        }  
         return Response.status(200).entity(getShoppingCart()).build();
     }
     
@@ -86,11 +79,10 @@ public class Service  implements Serializable{
         }else{
             commerceItem = new CommerceItem();
             
-            if(session != null && session.getAttribute("lastCommerceId") != null){
-                commerceId = (Integer) session.getAttribute("lastCommerceId");
+            if(session.getAttribute("lastCommerceID") != null){
+                commerceId = (Integer) session.getAttribute("lastCommerceID");
                 commerceId++;
-            }
-            else{
+            }else{
                 commerceId = 1;
             }
             commerceItem.setCommerceId(String.valueOf(commerceId));
@@ -103,6 +95,7 @@ public class Service  implements Serializable{
                }
             }
             getShoppingCart().getItems().add(commerceItem);
+            updateShoppingCartAmount();
             session.setAttribute("lastCommerceID", commerceId);
             session.setAttribute("shoppingCart", getShoppingCart());
         }
@@ -123,13 +116,19 @@ public class Service  implements Serializable{
             System.out.println("Commerce id is required");
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
+        CommerceItem ciAux = new CommerceItem();
         if(!getShoppingCart().getItems().isEmpty()){
             for(CommerceItem commerceItem : getShoppingCart().getItems()){
                 if(commerceItem.getCommerceId().equals(commerceId)){
-                    getShoppingCart().getItems().remove(commerceItem);
+                    System.out.println("TEST ShoppingCArt Delete " + commerceId + " -- " + commerceItem.getCommerceId());
+                   ciAux = commerceItem; 
                 }
             }
         }
+        if (!ciAux.getCommerceId().isEmpty()){
+            getShoppingCart().getItems().remove(ciAux);
+        }
+        updateShoppingCartAmount();
         session.setAttribute("shoppingCart", getShoppingCart());
         return Response.status(200).entity(getShoppingCart()).build();
     }
@@ -160,5 +159,11 @@ public class Service  implements Serializable{
 
     public void setProducts(List<Product> products) {
         this.products = products;
+    }
+    private void updateShoppingCartAmount(){
+        getShoppingCart().setAmount(BigDecimal.ZERO);
+        for (CommerceItem commerceItem : getShoppingCart().getItems()) {
+            getShoppingCart().setAmount(getShoppingCart().getAmount().add(commerceItem.getAmount()));
+        }   
     }
 }
